@@ -4,6 +4,8 @@ import akka.actor._
 import akka.event.{Logging, LoggingAdapter}
 import com.example._
 
+import scala.util.Random
+
 object ProcessManagerDriver {
 }
 
@@ -148,3 +150,38 @@ case class BankLoanRateQuoted(
                                loadQuoteReferenceId: String,
                                taxId: String,
                                interestRate: Double)
+
+class Bank(
+    bankId: String,
+    primeRate: Double,
+    ratePremium: Double)
+  extends Actor {
+
+  val randomDiscount = new Random()
+  val randomQuoteId = new Random()
+
+  private def calculateInterestRate(
+                                     amount: Double,
+                                     months: Double,
+                                     creditScore: Double): Double = {
+
+    val creditScoreDiscount = creditScore / 100.0 / 10.0 -
+      (randomDiscount.nextInt(5) * 0.05)
+
+    primeRate + ratePremium + ((months / 12.0) / 10.0) -
+      creditScoreDiscount
+  }
+
+  def receive = {
+    case message: QuoteLoanRate =>
+      val interestRate =
+        calculateInterestRate(
+          message.amount.toDouble,
+          message.termInMonths.toDouble,
+          message.creditScore.toDouble)
+
+      sender ! BankLoanRateQuoted(
+        bankId, randomQuoteId.nextInt(1000).toString,
+        message.loadQuoteReferenceId, message.taxId, interestRate)
+  }
+}
