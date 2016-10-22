@@ -67,6 +67,124 @@ case class BestLoanRateDenied(
                                termInMonths: Integer,
                                creditScore: Integer)
 
+class LoanBroker(
+    creditBureau: ActorRef,
+    banks: Seq[ActorRef])
+  extends ProcessManager {
+
+  def receive = {
+    case message: BankLoanRateQuoted =>
+      log.info(s"$message")
+
+      processOf(message.loadQuoteReferenceId) !
+        RecordLoanRateQuote(
+          message.bankId,
+          message.bankLoanRateQuoteId,
+          message.interestRate)
+
+    case message: CreditChecked =>
+      log.info(s"$message")
+
+      processOf(message.creditProcessingReferenceId) !
+          EstablishCreditScoreForLoanRateQuote(
+              message.creditProcessingReferenceId,
+              message.taxId,
+              message.score)
+
+    case message: CreditScoreForLoanRateQuoteDenied =>
+      log.info(s"$message")
+
+      processOf(message.loanRateQuoteId) !
+              TerminateLoanRateQuote()
+
+      ProcessManagerDriver.completeAll
+
+      val denied =
+            BestLoanRateDenied(
+                message.loanRateQuoteId,
+                message.taxId,
+                message.amount,
+                message.termInMonths,
+                message.score)
+
+      log.info(s"Would be sent to original requester: $denied")
+
+    case message: CreditScoreForLoanRateQuoteEstablished =>
+      log.info(s"$message")
+
+      banks map { bank =>
+        bank ! QuoteLoanRate(
+          message.loanRateQuoteId,
+          message.taxId,
+          message.score,
+          message.amount,
+          message.termInMonths)
+      }
+
+      ProcessManagerDriver.completedStep
+
+    case message: LoanRateBestQuoteFilled =>
+      log.info(s"$message")
+
+      ProcessManagerDriver.completedStep
+
+      stopProcess(message.loanRateQuoteId)
+
+      val best = BestLoanRateQuoted(
+          message.bestBankLoanRateQuote.bankId,
+          message.loanRateQuoteId,
+          message.taxId,
+          message.amount,
+          message.termInMonths,
+          message.creditScore,
+          message.bestBankLoanRateQuote.interestRate)
+
+      log.info(s"Would be sent to original requester: $best")
+
+    case message: LoanRateQuoteRecorded =>
+      log.info(s"$message")
+
+      ProcessManagerDriver.completedStep
+
+    case message: LoanRateQuoteStarted =>
+      log.info(s"$message")
+
+      creditBureau ! CheckCredit(
+          message.loanRateQuoteId,
+          message.taxId)
+
+    case message: LoanRateQuoteTerminated =>
+      log.info(s"$message")
+
+      stopProcess(message.loanRateQuoteId)
+
+    case message: ProcessStarted =>
+      log.info(s"$message")
+
+      message.process ! StartLoanRateQuote(banks.size)
+
+    case message: ProcessStopped =>
+      log.info(s"$message")
+
+      context.stop(message.process)
+
+    case message: QuoteBestLoanRate =>
+      val loanRateQuoteId = LoanRateQuote.id
+
+      log.info(s"$message for: $loanRateQuoteId")
+
+      val loanRateQuote =
+            LoanRateQuote(
+                context.system,
+                loanRateQuoteId,
+                message.taxId,
+                message.amount,
+                message.termInMonths,
+                self)
+
+      startProcess(loanRateQuoteId, loanRateQuote)
+  }
+}
 //=========== LoanRateQuote
 
 case class StartLoanRateQuote(
