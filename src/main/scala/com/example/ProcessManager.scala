@@ -135,6 +135,30 @@ case class CreditChecked(
                           taxId: String,
                           score: Integer)
 
+class CreditBureau extends Actor {
+  val creditRanges = Vector(300, 400, 500, 600, 700)
+  val randomCreditRangeGenerator = new Random()
+  val randomCreditStoreGenerator = new Random()
+
+  def receive = {
+    case message: CheckCredit =>
+      val range =
+        creditRanges(
+          randomCreditRangeGenerator.nextInt(5)
+        )
+      val score =
+        range
+      + randomCreditRangeGenerator.nextInt(20)
+
+      sender !
+      CreditChecked(
+        message.creditProcessingReferenceId,
+        message.taxId,
+        score
+      )
+  }
+}
+
 //=========== Bank
 
 case class QuoteLoanRate(
