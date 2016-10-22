@@ -7,6 +7,33 @@ import com.example._
 import scala.util.Random
 
 object ProcessManagerDriver extends CompletableApp(5) {
+  val creditBureau =
+          system.actorOf(
+              Props[CreditBureau],
+              "creditBureau")
+
+  val bank1 =
+          system.actorOf(
+              Props(classOf[Bank], "bank1", 2.75, 0.30),
+              "bank1")
+  val bank2 =
+          system.actorOf(
+              Props(classOf[Bank], "bank2", 2.73, 0.31),
+              "bank2")
+  val bank3 =
+          system.actorOf(
+              Props(classOf[Bank], "bank3", 2.80, 0.29),
+              "bank3")
+
+  val loanBroker = system.actorOf(
+      Props(classOf[LoanBroker],
+            creditBureau,
+            Vector(bank1, bank2, bank3)),
+      "loanBroker")
+
+  loanBroker ! QuoteBestLoanRate("111-11-1111", 100000, 84)
+
+  awaitCompletion
 }
 
 case class ProcessStarted(
