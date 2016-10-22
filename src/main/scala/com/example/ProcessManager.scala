@@ -63,3 +63,18 @@ case class BestLoanRateDenied(
                                amount: Integer,
                                termInMonths: Integer,
                                creditScore: Integer)
+
+case class QuoteLoanRate(
+                          loadQuoteReferenceId: String,
+                          taxId: String,
+                          creditScore: Integer,
+                          amount: Integer,
+                          termInMonths: Integer)
+
+case class BankLoanRateQuoted(
+                               bankId: String,
+                               bankLoanRateQuoteId: String,
+                               loadQuoteReferenceId: String,
+                               taxId: String,
+                               interestRate: Double)
+
