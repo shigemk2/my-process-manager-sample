@@ -43,6 +43,7 @@ abstract class ProcessManager extends Actor {
   }
 }
 
+//=========== LoanBroker
 case class QuoteBestLoanRate(
                               taxId: String,
                               amount: Integer,
@@ -64,6 +65,76 @@ case class BestLoanRateDenied(
                                termInMonths: Integer,
                                creditScore: Integer)
 
+//=========== LoanRateQuote
+
+case class StartLoanRateQuote(
+                               expectedLoanRateQuotes: Integer)
+    
+case class LoanRateQuoteStarted(
+                                 loanRateQuoteId: String,
+                                 taxId: String)
+    
+case class TerminateLoanRateQuote()
+
+case class LoanRateQuoteTerminated(
+                                    loanRateQuoteId: String,
+                                    taxId: String)
+
+case class EstablishCreditScoreForLoanRateQuote(
+                                                 loanRateQuoteId: String,
+                                                 taxId: String,
+                                                 score: Integer)
+    
+case class CreditScoreForLoanRateQuoteEstablished(
+                                                   loanRateQuoteId: String,
+                                                   taxId: String,
+                                                   score: Integer,
+                                                   amount: Integer,
+                                                   termInMonths: Integer)
+    
+case class CreditScoreForLoanRateQuoteDenied(
+                                              loanRateQuoteId: String,
+                                              taxId: String,
+                                              amount: Integer,
+                                              termInMonths: Integer,
+                                              score: Integer)
+
+case class RecordLoanRateQuote(
+                                bankId: String,
+                                bankLoanRateQuoteId: String,
+                                interestRate: Double)
+    
+case class LoanRateQuoteRecorded(
+                                  loanRateQuoteId: String,
+                                  taxId: String,
+                                  bankLoanRateQuote: BankLoanRateQuote)
+    
+case class LoanRateBestQuoteFilled(
+                                    loanRateQuoteId: String,
+                                    taxId: String,
+                                    amount: Integer,
+                                    termInMonths: Integer,
+                                    creditScore: Integer,
+                                    bestBankLoanRateQuote: BankLoanRateQuote)
+    
+case class BankLoanRateQuote(
+                              bankId: String,
+                              bankLoanRateQuoteId: String,
+                              interestRate: Double)
+
+//=========== CreditBureau
+
+case class CheckCredit(
+                        creditProcessingReferenceId: String,
+                        taxId: String)
+
+case class CreditChecked(
+                          creditProcessingReferenceId: String,
+                          taxId: String,
+                          score: Integer)
+
+//=========== Bank
+
 case class QuoteLoanRate(
                           loadQuoteReferenceId: String,
                           taxId: String,
@@ -77,4 +148,3 @@ case class BankLoanRateQuoted(
                                loadQuoteReferenceId: String,
                                taxId: String,
                                interestRate: Double)
-
