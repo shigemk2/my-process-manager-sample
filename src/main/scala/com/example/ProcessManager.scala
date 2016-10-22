@@ -124,6 +124,118 @@ case class BankLoanRateQuote(
                               bankLoanRateQuoteId: String,
                               interestRate: Double)
 
+object LoanRateQuote {
+  val randomLoanRateQuoteId = new Random()
+
+  def apply(
+             system: ActorSystem,
+             loanRateQuoteId: String,
+             taxId: String,
+             amount: Integer,
+             termInMonths: Integer,
+             loanBroker: ActorRef): ActorRef = {
+    val loanRateQuote =
+      system.actorOf(
+        Props(
+          classOf[LoanRateQuote],
+          loanRateQuoteId, taxId,
+          amount, termInMonths, loanBroker),
+        "loanRateQuote-" + loanRateQuote)
+    loanRateQuote
+  }
+
+  def id() = {
+    randomLoanRateQuoteId.nextInt(1000).toString
+  }
+}
+
+class LoanRateQuote(
+    loanRateQuoteId: String,
+    taxId: String,
+    amount: Integer,
+    termInMonths: Integer,
+    loanBroker: ActorRef)
+  extends Actor {
+
+  var bankLoanRateQuotes = Vector[BankLoanRateQuote]()
+  var creditRatingScore: Int = _
+  var expectedLoanRateQuotes: Int = _
+
+  private def bestBankLoanRateQuote() = {
+    var best = bankLoanRateQuotes(0)
+
+    bankLoanRateQuotes map { bankLoanRateQuote =>
+      if best.interestRate > bankLoanRateQuote.interestRate
+      best = bankLoanRateQuote
+    }
+    best
+  }
+
+  private def quotableCreditScore(score: Integer): Boolean = {
+    score > 399
+  }
+
+  def receive = {
+    case message: StartLoanRateQuote =>
+      expectedLoanRateQuotes =
+        message.expectedLoanRateQuotes
+      loanBroker !
+        LoanRateQuoteStarted(
+          loanRateQuoteId,
+          taxId)
+
+    case message: EstablishCreditScoreForLoanRateQuote =>
+      creditRatingScore = message.score
+      if (quotableCreditScore(creditRatingScore))
+        loanBroker !
+          CreditScoreForLoanRateQuoteEstablished(
+            loanRateQuoteId,
+            taxId,
+            creditRatingScore,
+            amount,
+            termInMonths)
+      else
+        loanBroker !
+          CreditScoreForLoanRateQuoteDenied(
+            loanRateQuoteId,
+            taxId,
+            amount,
+            termInMonths,
+            creditRatingScore)
+
+    case message: RecordLoanRateQuote =>
+      val bankLoanRateQuote =
+        BankLoanRateQuote(
+          message.bankId,
+          message.bankLoanRateQuoteId,
+          message.interestRate)
+      bankLoanRateQuotes =
+        bankLoanRateQuotes :+ bankLoanRateQuote
+      loanBroker !
+        LoanRateQuoteRecorded(
+          loanRateQuoteId,
+          taxId,
+          bankLoanRateQuote)
+
+      if (bankLoanRateQuotes.size >=
+        expectedLoanRateQuotes)
+        loanBroker !
+          LoanRateBestQuoteFilled(
+            loanRateQuoteId,
+            taxId,
+            amount,
+            termInMonths,
+            creditRatingScore,
+            bestBankLoanRateQuote)
+
+    case message: TerminateLoanRateQuote =>
+      loanBroker !
+        LoanRateQuoteTerminated(
+          loanRateQuoteId,
+          taxId)
+  }
+}
+
 //=========== CreditBureau
 
 case class CheckCredit(
