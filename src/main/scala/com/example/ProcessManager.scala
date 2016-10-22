@@ -19,7 +19,7 @@ case class ProcessStopped(
 
 abstract class ProcessManager extends Actor {
   private var processes = Map[String, ActorRef]()
-  val long: LoggingAdapter = Logging.getLogger(context.system, self)
+  val log: LoggingAdapter = Logging.getLogger(context.system, self)
 
   def processOf(processId: String): ActorRef = {
     if (processes.contains(processId)) {
