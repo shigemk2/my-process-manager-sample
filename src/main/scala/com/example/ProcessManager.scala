@@ -42,3 +42,24 @@ abstract class ProcessManager extends Actor {
     }
   }
 }
+
+case class QuoteBestLoanRate(
+                              taxId: String,
+                              amount: Integer,
+                              termInMonths: Integer)
+
+case class BestLoanRateQuoted(
+                               bankId: String,
+                               loanRateQuoteId: String,
+                               taxId: String,
+                               amount: Integer,
+                               termInMonths: Integer,
+                               creditScore: Integer,
+                               interestRate: Double)
+
+case class BestLoanRateDenied(
+                               loanRateQuoteId: String,
+                               taxId: String,
+                               amount: Integer,
+                               termInMonths: Integer,
+                               creditScore: Integer)
