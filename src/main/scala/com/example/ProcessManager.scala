@@ -6,7 +6,7 @@ import com.example._
 
 import scala.util.Random
 
-object ProcessManagerDriver {
+object ProcessManagerDriver extends CompletableApp(5) {
 }
 
 case class ProcessStarted(
