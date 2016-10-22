@@ -285,7 +285,7 @@ object LoanRateQuote {
           classOf[LoanRateQuote],
           loanRateQuoteId, taxId,
           amount, termInMonths, loanBroker),
-        "loanRateQuote-" + loanRateQuote)
+        "loanRateQuote-" + loanRateQuoteId)
     loanRateQuote
   }
 
@@ -310,8 +310,10 @@ class LoanRateQuote(
     var best = bankLoanRateQuotes(0)
 
     bankLoanRateQuotes map { bankLoanRateQuote =>
-      if best.interestRate > bankLoanRateQuote.interestRate
-      best = bankLoanRateQuote
+      if (best.interestRate >
+           bankLoanRateQuote.interestRate) {
+        best = bankLoanRateQuote
+      }
     }
     best
   }
