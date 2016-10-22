@@ -4,6 +4,12 @@ import akka.actor._
 import com.example._
 
 object ProcessManagerDriver {
-  def main(args: Array[String]): Unit = {
-  }
 }
+
+case class ProcessStarted(
+                         processId: String,
+                         process: ActorRef)
+
+case class ProcessStopped(
+                           processId: String,
+                           process: ActorRef)
