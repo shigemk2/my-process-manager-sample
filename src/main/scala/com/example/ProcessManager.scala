@@ -6,7 +6,7 @@ import com.example._
 
 import scala.util.Random
 
-object ProcessManagerDriver extends CompletableApp(5) {
+object ProcessManagerDriver extends CompletableApp(1) {
   val creditBureau =
           system.actorOf(
               Props[CreditBureau],
